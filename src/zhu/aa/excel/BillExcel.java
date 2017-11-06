@@ -1,26 +1,22 @@
 package zhu.aa.excel;
 
-import java.io.File;
 import java.io.FileOutputStream;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.hssf.util.HSSFColor;
 
-import zhu.aa.dao.ORGDaoImpl;
 import zhu.aa.pojo.Bill;
-import zhu.aa.service.ORGService;
-import zhu.aa.service.ORGServiceImpl;
 
 public class BillExcel {
 
+	@SuppressWarnings({ "deprecation", "rawtypes" })
 	public void createExcel(List list,String orgname) {
 		// 第一步，创建一个webbook，对应一个Excel文件
 		HSSFWorkbook wb = new HSSFWorkbook();
@@ -28,7 +24,7 @@ public class BillExcel {
 		HSSFSheet sheet = wb.createSheet("表一");
 		// 设置单元格宽高
 		// 第三步，在sheet中添加表头第0行,注意老版本poi对Excel的行数列数有限制short
-		HSSFRow row = sheet.createRow((int) 0);
+		HSSFRow row = sheet.createRow((short) 5);
 		// 第四步，创建单元格，并设置值表头 设置表头居中
 		HSSFCellStyle style = wb.createCellStyle();
 		// 创建一个居中格式
@@ -125,13 +121,25 @@ public class BillExcel {
 		cell.setCellValue("备注");
 		cell.setCellStyle(style);
 		try {
+			//获取服务号的集合
+			HashSet<String > ha = new HashSet<>();
+			Calendar cal = Calendar.getInstance();
+			int m = cal.get(Calendar.MONTH);
+			int y = cal.get(Calendar.YEAR);
+			int d = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+			if (m == 0) {
+				m = 12;
+				y = y - 1;
+			}
 			// 第五步，写入实体数据 实际应用中这些数据从数据库得到，
 			System.out.println("生成账单中。。。。。"+list.size());
+			//计算总金额
+			int rescuefee = 0;
 			for (int i = 0; i < list.size(); i++) {
 				Bill bill = (Bill) list.get(i);
 				if (bill == null) {
 					// 第四步，创建单元格，并设置值
-					row = sheet.createRow((int) i + 1);
+					row = sheet.createRow((int) i + 6);
 					row.createCell((short) 0).setCellValue("");
 					row.createCell((short) 1).setCellValue("");
 					row.createCell((short) 2).setCellValue("");
@@ -149,8 +157,12 @@ public class BillExcel {
 					row.createCell((short) 25).setCellValue("");
 					cell = row.createCell((short) 27);
 				}else {
+					String srtfee = bill.getCOMFIRMED_FEE();
+					int intfee = Integer.parseInt(srtfee);
+					rescuefee += intfee;
+					ha.add(bill.getSERVICE_TRADE_ID());
 					// 第四步，创建单元格，并设置值
-					row = sheet.createRow((int) i + 1);
+					row = sheet.createRow((int) i + 6);
 					row.createCell((short) 0).setCellValue(bill.getSERVICE_TRADE_ID());
 					row.createCell((short) 1).setCellValue(bill.getRESCUE_TIME());
 					row.createCell((short) 2).setCellValue(bill.getUSER_NAME());
@@ -168,15 +180,20 @@ public class BillExcel {
 					row.createCell((short) 25).setCellValue(bill.getPIC_AUDIT_STATE());
 					cell = row.createCell((short) 27);
 				}
+				if (i==list.size()-1) {
+					row = sheet.createRow(1);
+					row.createCell((short) 0).setCellValue("救援费结算周期");
+					row.createCell((short) 1).setCellValue(y+"年"+m+"月1日-"+y+"年"+m+"月"+d+"日");
+					row = sheet.createRow(2);
+					int size = ha.size();
+					row.createCell((short) 0).setCellValue("救援服务次数");
+					row.createCell((short) 1).setCellValue(size+"");
+					row = sheet.createRow(3);
+					row.createCell((short) 0).setCellValue("救援费用");
+					row.createCell((short) 1).setCellValue(""+rescuefee);
+				}
 			}
 			// 第六步，将文件存到指定位置
-			Calendar cal = Calendar.getInstance();
-			int m = cal.get(Calendar.MONTH);
-			int y = cal.get(Calendar.YEAR);
-			if (m == 0) {
-				m = 12;
-				y = y - 1;
-			}
 			FileOutputStream fout = new FileOutputStream(orgname + y + "年" + m + "月账单.xls");//"D://" +
 			System.out.println("excel已生成");
 			wb.write(fout);

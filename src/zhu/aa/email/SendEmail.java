@@ -81,11 +81,11 @@ public class SendEmail extends TimerTask {
 					if (message.size() != 0) {
 						new BillExcel().createExcel(message, name);
 						// 获取服务商邮箱
-						String email = org.getEmail();
-						// String email = "liqz1504@aachina.net";
+						// String email = org.getEmail();
+						String email = "liqz1504@aachina.net";
 						EmailHelper emailHelper = new EmailHelper(host, username, password, from);
 						emailHelper.setTo(email);
-						emailHelper.setSubject("账单明细");
+						emailHelper.setSubject(name + "对账账单明细");
 						emailHelper.setHtmlContent(p.getProperty("emaiContent"));
 						int y = Calendar.getInstance().get(Calendar.YEAR);
 						int m = Calendar.getInstance().get(Calendar.MONTH);
@@ -102,7 +102,7 @@ public class SendEmail extends TimerTask {
 						// 含机构ID,省份、服务商对账邮箱、账单发送详情
 						String province = orgDaoImpl.findProvince(org_id);
 						Date da = new Date();
-						DateFormat df = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+						DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 						String date = df.format(da);
 						new ORGDaoImpl().sendDetail(org_id, province, email, mes, date);
 						System.out.println("邮件已发送");
